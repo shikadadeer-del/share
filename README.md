@@ -2,6 +2,7 @@
 
 ## 最初に
 最初に「GCP Key」を設定してください、「Cloud Translation API」が割り当てられたキーが必要になります。
+
 また要約や辞書は別途「Gemini Key」が必要になります。
 
 - GCP参考： https://qiita.com/yuya13335/items/99d51b554eb4f1681eb7
