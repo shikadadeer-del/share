@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Storage Manager</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; background-color: #f9f9f9; color: #333; }
+        .link-section { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #4285f4; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .link-group { margin-bottom: 5px; }
+        .link-group strong { font-size: 0.85em; color: #666; display: inline-block; width: 85px; }
+        .link-section a { display: inline-block; margin-right: 15px; color: #1a73e8; text-decoration: none; font-size: 0.9em; }
+        .link-section a:hover { text-decoration: underline; }
+        
+        .usage-container { background: #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .usage-bar-bg { background: #ddd; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        .usage-bar-fill { background: #4285f4; height: 100%; width: 0%; transition: width 0.5s; }
+        .usage-text { font-size: 0.9em; font-weight: bold; }
+
+        .controls { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        table { border-collapse: collapse; width: 100%; max-width: 900px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #eee; font-size: 0.9em; }
+        
+        button { cursor: pointer; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; }
+        .refresh-btn { background-color: #4285f4; color: white; }
+        .clear-all-btn { background-color: #3c4043; color: white; }
+        .del-btn { background-color: #d93025; color: white; padding: 5px 10px; font-size: 0.85em; }
+        button:hover { opacity: 0.8; }
+        tr:hover { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+
+    <div class="link-section">
+        <div class="link-group">
+            <strong>GCP:</strong>
+            <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">credentials</a>
+            <a href="https://console.cloud.google.com/apis/dashboard" target="_blank" rel="noopener">dashboard</a>
+        </div>
+        <div class="link-group">
+            <strong>AI Studio:</strong>
+            <a href="https://aistudio.google.com/app/api-keys" target="_blank" rel="noopener">api-keys</a>
+            <a href="https://aistudio.google.com/app/usage" target="_blank" rel="noopener">usage</a>
+        </div>
+    </div>
+
+    <div class="usage-container">
+        <div class="usage-text" id="usageLabel">ストレージ使用量: 計算中...</div>
+        <div class="usage-bar-bg"><div id="usageBar" class="usage-bar-fill"></div></div>
+    </div>
+
+    <div class="controls">
+        <button class="refresh-btn" onclick="updateUI()">リストと容量を更新</button>
+        <button class="clear-all-btn" onclick="clearAllStorage()">全データを消去</button>
+    </div>
+
+    <table id="storageTable">
+        <thead>
+            <tr>
+                <th>キー (Key)</th>
+                <th>値 (Value)</th>
+                <th style="width: 80px;">操作</th>
+            </tr>
+        </thead>
+        <tbody id="storageBody"></tbody>
+    </table>
+
+    <script>
+        async function updateUsageInfo() {
+            if (navigator.storage && navigator.storage.estimate) {
+                const estimate = await navigator.storage.estimate();
+                const usedMB = (estimate.usage / (1024 * 1024)).toFixed(2);
+                const quotaMB = (estimate.quota / (1024 * 1024)).toFixed(2);
+                const percent = ((estimate.usage / estimate.quota) * 100).toFixed(2);
+
+                document.getElementById('usageLabel').textContent = 
+                    `ストレージ使用量: ${usedMB} MB / 上限: ${quotaMB} MB (${percent}%)`;
+                document.getElementById('usageBar').style.width = `${percent}%`;
+            }
+        }
+
+        function renderStorage() {
+            const tbody = document.getElementById('storageBody');
+            tbody.innerHTML = ''; 
+            const keys = Object.keys(localStorage);
+
+            if (keys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#777;">保存されているデータはありません。</td></tr>';
+                return;
+            }
+
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${key}</td>
+                    <td style="word-break: break-all;">${value}</td>
+                    <td><button class="del-btn" onclick="deleteItem('${key}')">削除</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteItem(key) {
+            localStorage.removeItem(key);
+            updateUI();
+        }
+
+        function clearAllStorage() {
+            if (confirm('LocalStorage内の全データを削除します。よろしいですか？')) {
+                localStorage.clear();
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            renderStorage();
+            updateUsageInfo();
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
