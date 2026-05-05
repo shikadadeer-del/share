@@ -225,12 +225,29 @@
         executeGemini(prompt, "AI構造化要約");
     }
 
-    function runAiDict() {
-        const word = document.getElementById('dictInput').value;
-        if(!word) return;
-        const prompt = `単語/フレーズ「${word}」について、以下の項目で詳しく解説してください。\n\n1. 基本的な意味と訳語\n2. 語源や由来（理解を助ける背景）\n3. 類義語とのニュアンスの違い（使い分け）\n4. 自然な例文（英語＋日本語）を3つ\n5. その表現が使われる主な状況\n\n日本語で丁寧にお願いします。`;
-        executeGemini(prompt, `AI辞書詳細解説: ${word}`);
-    }
+function runAiDict() {
+    const word = document.getElementById('dictInput').value;
+    if(!word) return;
+    
+    // ご指定の4項目に厳選したプロンプト
+    const prompt = `英単語/フレーズ「${word}」について、以下の4つの構成で簡潔に解説してください。
+
+1. 英語：日本語
+   - 代表的な訳語を提示。
+
+2. 類語（複数） 英語：日本語
+   - 似た意味を持つ単語と、その日本語訳を複数挙げてください。
+
+3. 意味を日本語で説明
+   - その単語が持つ本質的な意味やニュアンスを日本語で詳しく解説してください。
+
+4. 用例 英語：日本語
+   - 実践的な例文と、その日本語訳を提示してください。
+
+回答はMarkdown形式で、余計な前置きをせずに出力してください。`;
+
+    executeGemini(prompt, `AI辞書詳細解説: ${word}`);
+}
 
     function formatEnBreaks() {
         const el = document.getElementById('enInput');
