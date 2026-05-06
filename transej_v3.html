@@ -198,25 +198,44 @@
         alert("APIキーを保存しました。");
     }
 
-    async function executeGemini(prompt, title) {
-        const key = document.getElementById('geminiKey').value.trim();
-        if(!key) return alert("Gemini API Keyが必要です。");
-        const win = window.open("", "_blank", "width=700,height=800");
-        win.document.write("<html><body>AI解析中... (Model: " + GEMINI_MODEL + ")</body></html>");
-        
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            const data = await res.json();
-            if (data.candidates && data.candidates[0].content) {
-                const text = data.candidates[0].content.parts[0].text;
-                const htmlBody = text.replace(/\n/g, '<br>').replace(/### (.*)/g, '<h3 style="color:#5856d6;border-bottom:1px solid #eee;">$1</h3>').replace(/## (.*)/g, '<h2 style="color:#1d1d1f;border-left:4px solid #5856d6;padding-left:10px;">$1</h2>').replace(/\*\* (.*?) \*\*/g, '<b>$1</b>');
-                win.document.body.innerHTML = `<style>body{font-family:sans-serif;line-height:1.7;padding:30px;color:#1d1d1f;}</style><h2>${title}</h2><hr>${htmlBody}`;
-            } else { throw new Error(data.error?.message || "Invalid Response"); }
-        } catch (e) { win.document.body.innerHTML = `<p style="color:red">Error: ${e.message}</p>`; }
-    }
+async function executeGemini(prompt, title) {
+    const key = document.getElementById('geminiKey').value.trim();
+    if(!key) return alert("Gemini API Keyが必要です。");
+    const win = window.open("", "_blank", "width=700,height=800");
+    win.document.write("<html><body>AI解析中... (Model: " + GEMINI_MODEL + ")</body></html>");
+    
+    try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const data = await res.json();
+        if (data.candidates && data.candidates[0].content) {
+            let text = data.candidates[0].content.parts[0].text;
+            
+            // 見出しの変換処理を見直し（統一したスタイルを適用）
+            const htmlBody = text
+                .replace(/\n/g, '<br>')
+                // 「## 見出し」「### 見出し」「1. 見出し」をすべて統一見出しスタイルへ
+                .replace(/^(?:#+\s*|\d+\.\s*)(.*)/gm, '<h2 style="color:#1d1d1f; border-left:4px solid #5856d6; padding-left:10px; margin-top:20px; border-bottom:1px solid #eee;">$1</h2>')
+                .replace(/\*\* (.*?) \*\*/g, '<b>$1</b>')
+                .replace(/\*(.*?)\*/g, '<i>$1</i>');
+
+            win.document.body.innerHTML = `
+                <style>
+                    body { font-family: -apple-system, sans-serif; line-height: 1.7; padding: 30px; color: #1d1d1f; background: #f9f9fb; }
+                    h2 { font-size: 1.2em; }
+                    b { color: #007aff; }
+                    hr { border: 0; border-top: 1px solid #d2d2d7; margin: 20px 0; }
+                </style>
+                <div style="font-size: 0.9em; color: #636366;">AI Dictionary Report</div>
+                <h1 style="font-size: 1.5em; margin-top: 5px;">${title}</h1>
+                <hr>
+                ${htmlBody}
+            `;
+        } else { throw new Error(data.error?.message || "Invalid Response"); }
+    } catch (e) { win.document.body.innerHTML = `<p style="color:red">Error: ${e.message}</p>`; }
+}
 
     function runAiSummary(lang) {
         const text = document.getElementById(lang==='en'?'enInput':'jaOutput').value;
