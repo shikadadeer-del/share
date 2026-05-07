@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Translation Notepad v8.9.6</title>
+    <title>Translation Notepad v8.9.7</title>
     <style>
         :root { 
             --primary: #007aff; --bg: #f5f5f7; --border: #d2d2d7; 
@@ -55,8 +55,16 @@
             scrollbar-gutter: stable;
         }
 
+        /* Wrap OFF 時のスタイル */
+        .wrap-off {
+            white-space: pre !important;
+            overflow-wrap: normal !important;
+            word-break: normal !important;
+            overflow-x: scroll !important;
+        }
+
         .backdrop { 
-            color: #CCF; /* 可視化用：ズレ確認カラー */
+            color: #CCF; 
             pointer-events: none; 
             z-index: 0;
             scrollbar-color: transparent transparent; 
@@ -137,6 +145,7 @@
                 <input type="text" id="dictInput" class="tool-input" style="width: 180px;" placeholder="AI Dictionary Search..." onkeydown="if(event.keyCode==13) runAiDict()">
                 <button onclick="runAiDict()" class="ai mini" style="height: 28px;">AI Dict</button>
             </div>
+            <button id="wrapBtn" onclick="toggleWrap()" class="sec" style="min-width: 90px;">Wrap: ON</button>
             <button onclick="saveManual()" class="sec">Save</button>
             <button onclick="window.open('./cpanel.html', '_blank')" class="sec" style="width:36px; padding:0;">⚙</button>
         </div>
@@ -175,6 +184,7 @@
     
     let allDocs = JSON.parse(localStorage.getItem(DOCS_KEY) || '{"Untitled": {"history":[], "url":""}}');
     let currentTitle = Object.keys(allDocs)[0];
+    let isWrapOn = true;
 
     window.onload = () => {
         document.getElementById('gcpModelDisplay').textContent = `[${GCP_MODEL}]`;
@@ -185,6 +195,26 @@
         initDocSelector();
         loadDoc(currentTitle);
     };
+
+    function toggleWrap() {
+        isWrapOn = !isWrapOn;
+        const btn = document.getElementById('wrapBtn');
+        const editors = [
+            document.getElementById('enInput'), document.getElementById('jaOutput'),
+            document.getElementById('enBackdrop'), document.getElementById('jaBackdrop')
+        ];
+        
+        btn.textContent = `Wrap: ${isWrapOn ? 'ON' : 'OFF'}`;
+        
+        editors.forEach(el => {
+            if (isWrapOn) el.classList.remove('wrap-off');
+            else el.classList.add('wrap-off');
+        });
+        
+        // スクロール位置の強制同期
+        syncScroll('en');
+        syncScroll('ja');
+    }
 
     function saveApiSettings() {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify({
@@ -327,7 +357,9 @@ ${text}`;
     }
     function syncScroll(id) {
         const tx = document.getElementById(id==='en'?'enInput':'jaOutput');
-        document.getElementById(id+'Backdrop').scrollTop = tx.scrollTop;
+        const bd = document.getElementById(id+'Backdrop');
+        bd.scrollTop = tx.scrollTop;
+        bd.scrollLeft = tx.scrollLeft; // 横スクロールも同期
     }
     function saveHistory(type) {
         if(!allDocs[currentTitle].history) allDocs[currentTitle].history = [];
